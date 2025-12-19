@@ -1,0 +1,17 @@
+# Archivos de Python que no sirven
+__pycache__/
+*.py[cod]
+
+# Base de datos (si es local sqlite, aunque tú usas mysql, mejor prevenir)
+db.sqlite3
+
+# Entorno virtual (¡MUY IMPORTANTE NO SUBIR ESTO!)
+venv/
+env/
+
+# Variables de entorno y claves (seguridad)
+.env
+
+# Carpetas de IDE
+.vscode/
+.idea/

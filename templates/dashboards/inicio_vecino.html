@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Comunidad</title>
+    <style>body { font-family: sans-serif; background-color: #f9f9f9; padding: 20px; }</style>
+</head>
+<body>
+    <h1 style="color: #27ae60;">🏡 Mi Portal</h1>
+    <p>Bienvenido vecino <strong>{{ request.user.username }}</strong>.</p>
+    
+    <div style="display: flex; gap: 10px;">
+        <div style="border: 1px solid #ccc; padding: 15px; width: 200px;">
+            <h3>Mis Votos</h3>
+            <p>Tienes 0 votaciones pendientes.</p>
+        </div>
+        <div style="border: 1px solid #ccc; padding: 15px; width: 200px;">
+            <h3>Documentos</h3>
+            <p>Actas y Estatutos.</p>
+        </div>
+    </div>
+
+    <br>
+    <a href="{{ url('logout') }}">Cerrar Sesión</a>
+</body>
+</html>
