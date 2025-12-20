@@ -4,41 +4,39 @@
     <meta charset="UTF-8">
     <title>Panel Presidente</title>
     <style>
-        body { font-family: sans-serif; background-color: #ecf0f1; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
-        th { background-color: #2980b9; color: white; }
-        .btn-crear { background: #27ae60; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
-        .btn-borrar { background: #e74c3c; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 0.8em; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .btn { padding: 5px 10px; text-decoration: none; border-radius: 4px; }
+        .btn-ver { background-color: #28a745; color: white; }
+        .btn-crear { background-color: #007bff; color: white; }
+        .btn-borrar { background-color: #dc3545; color: white; }
     </style>
 </head>
 <body>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-            <h1 style="color: #2980b9; margin-bottom: 5px;">🏢 Gestión: {{ cooperativa.nombre }}</h1>
-            <p>Hola, <strong>{{ usuario.username }}</strong>. Estás al mando.</p>
-        </div>
-        <a href="{{ url('logout') }}" style="color: red;">Cerrar Sesión</a>
+
+    <h1>Panel de Presidencia - {{ cooperativa.nombre }}</h1>
+    <p>Bienvenido, {{ usuario.first_name }} {{ usuario.last_name }}</p>
+
+    <div style="margin: 20px 0;">
+        <a href="{{ url('listar_vecinos') }}" class="btn btn-ver">📋 Cargar Lista de Vecinos</a>
+        <a href="{{ url('crear_vecino') }}" class="btn btn-crear">➕ Nuevo Vecino</a>
+        
+        <a href="{{ url('logout') }}" style="float: right; color: red;">Cerrar Sesión</a>
     </div>
 
     <hr>
 
-    <h3>👥 Mis Vecinos</h3>
-    
-    {% if not vecinos %}
-        <p>Para ver y gestionar los vecinos, pulsa aquí:</p>
-        <a href="{{ url('listar_vecinos') }}" class="btn-crear">📂 Cargar Lista de Vecinos</a>
-    {% else %}
-        <div style="margin-bottom: 15px;">
-            <a href="{{ url('crear_vecino') }}" class="btn-crear">+ Registrar Nuevo Vecino</a>
-        </div>
-
+    {% if vecinos %}
+        <h2>Listado de Vecinos ({{ vecinos|length }})</h2>
+        
         <table>
             <thead>
                 <tr>
                     <th>Usuario</th>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -49,12 +47,26 @@
                     <td>{{ vecino.first_name }} {{ vecino.last_name }}</td>
                     <td>{{ vecino.email }}</td>
                     <td>
-                        <a href="{{ url('eliminar_vecino', args=[vecino.id]) }}" class="btn-borrar" onclick="return confirm('¿Seguro que quieres echar a este vecino?');">Eliminar</a>
+                        {% if vecino.requiere_cambio_pass %}
+                            <span style="color:orange">⚠ Clave Temp.</span>
+                        {% else %}
+                            <span style="color:green">✔ Activo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url('eliminar_vecino', args=[vecino.id]) }}" 
+                           class="btn btn-borrar"
+                           onclick="return confirm('¿Seguro que quieres echar a este vecino?')">
+                           Eliminar
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    
+    {% else %}
+        <p>Selecciona una opción del menú para empezar a trabajar.</p>
     {% endif %}
 
 </body>

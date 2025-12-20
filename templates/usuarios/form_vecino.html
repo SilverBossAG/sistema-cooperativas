@@ -2,22 +2,28 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Nuevo Vecino</title>
-    <style>body { font-family: sans-serif; padding: 40px; background-color: #f4f4f4; }</style>
+    <title>Crear Nuevo Vecino</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        form { max-width: 400px; margin: 0 auto; }
+        input { width: 100%; padding: 8px; margin: 5px 0 15px; }
+        button { background-color: #007bff; color: white; padding: 10px 15px; border: none; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <div style="background: white; padding: 30px; max-width: 500px; margin: auto; border-radius: 10px;">
-        <h2>📝 Registrar Nuevo Vecino</h2>
-        
-        <form method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-            
-            {{ form.as_p() }}
 
-            <br>
-            <button type="submit" style="background: #27ae60; color: white; padding: 10px 20px; border: none; cursor: pointer;">Guardar Vecino</button>
-            <a href="{{ url('panel_inicio') }}" style="margin-left: 10px;">Cancelar</a>
-        </form>
-    </div>
+    <h2 style="text-align: center;">Dar de Alta Nuevo Vecino</h2>
+
+    <form method="post">
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+        {{ form.as_p() }}
+
+        <button type="submit">Guardar Vecino</button>
+        
+        <br><br>
+        <a href="{{ url('listar_vecinos') }}">Cancelar y volver</a>
+    </form>
+
 </body>
 </html>
