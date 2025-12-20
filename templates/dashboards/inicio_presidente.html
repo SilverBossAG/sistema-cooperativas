@@ -19,10 +19,10 @@
     <p>Bienvenido, {{ usuario.first_name }} {{ usuario.last_name }}</p>
 
     <div style="margin: 20px 0;">
-        <a href="{{ url('listar_vecinos') }}" class="btn btn-ver">📋 Cargar Lista de Vecinos</a>
-        <a href="{{ url('crear_vecino') }}" class="btn btn-crear">➕ Nuevo Vecino</a>
+        <a href="{% url 'listar_vecinos' %}" class="btn btn-ver">📋 Cargar Lista de Vecinos</a>
+        <a href="{% url 'crear_vecino' %}" class="btn btn-crear">➕ Nuevo Vecino</a>
         
-        <a href="{{ url('logout') }}" style="float: right; color: red;">Cerrar Sesión</a>
+        <a href="{% url 'logout' %}" style="float: right; color: red;">Cerrar Sesión</a>
     </div>
 
     <hr>
@@ -54,7 +54,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url('eliminar_vecino', args=[vecino.id]) }}" 
+                        <a href="{% url 'eliminar_vecino' vecino.id %}" 
                            class="btn btn-borrar"
                            onclick="return confirm('¿Seguro que quieres echar a este vecino?')">
                            Eliminar

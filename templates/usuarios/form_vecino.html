@@ -11,19 +11,15 @@
     </style>
 </head>
 <body>
-
     <h2 style="text-align: center;">Dar de Alta Nuevo Vecino</h2>
 
     <form method="post">
-        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-
-        {{ form.as_p() }}
+        {% csrf_token %} {{ form.as_p }}
 
         <button type="submit">Guardar Vecino</button>
         
         <br><br>
-        <a href="{{ url('listar_vecinos') }}">Cancelar y volver</a>
+        <a href="{% url 'listar_vecinos' %}">Cancelar y volver</a>
     </form>
-
 </body>
 </html>

@@ -11,8 +11,7 @@
         <p>Por seguridad, debes cambiar tu contraseña provisional antes de continuar.</p>
         
         <form method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-            {{ form.as_p() }}
+            {% csrf_token %} {{ form.as_p }}
             <button type="submit" style="background: #d35400; color: white; padding: 10px; border: none; cursor: pointer;">Guardar Nueva Contraseña</button>
         </form>
     </div>

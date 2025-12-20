@@ -13,18 +13,16 @@
     </style>
 </head>
 <body>
-
     <div class="caja-login">
         <h2 style="text-align: center;">Acceso Vecinos</h2>
         
         <form method="post">
-            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            {% csrf_token %}
 
             <div>
                 <label>Usuario:</label>
                 <input type="text" name="username" required placeholder="Tu usuario">
             </div>
-
             <div>
                 <label>Contraseña:</label>
                 <input type="password" name="password" required placeholder="Tu contraseña">
@@ -37,6 +35,5 @@
             <button type="submit">Entrar</button>
         </form>
     </div>
-
 </body>
 </html>

@@ -54,16 +54,8 @@ ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.jinja2.Jinja2', # Usamos Jinja2
-        'DIRS': [BASE_DIR / 'templates'], # Carpeta donde irán los HTML
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'environment': 'core.jinja2.environment',
-        },
-    },
-    {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],  # Le decimos que busque en tu carpeta templates
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
