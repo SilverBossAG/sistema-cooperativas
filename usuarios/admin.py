@@ -1,22 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Usuario, Cooperativa  # <--- Importamos AMBOS modelos
+from .models import Usuario, Cooperativa
 
 class UsuarioAdmin(UserAdmin):
-    # fieldsets: Controla qué campos ves al editar un usuario
+    # 1. FIELDSETS: Para que aparezca la cajita cuando entras a editar al usuario
     fieldsets = UserAdmin.fieldsets + (
-        # Añadimos tanto el ROL como la COOPERATIVA
-        ('Información Comunidad', {'fields': ('rol', 'cooperativa')}),
+        ('Información Comunidad', {'fields': ('rol', 'cooperativa', 'requiere_cambio_pass')}),
     )
     
-    # list_display: Controla las columnas de la tabla de usuarios
-    list_display = ('username', 'email', 'rol', 'cooperativa', 'is_staff')
+    # 2. LIST_DISPLAY:
+    list_display = ('username', 'email', 'rol', 'cooperativa', 'requiere_cambio_pass', 'is_staff')
     
-    # list_filter: Añade un filtro lateral para buscar rápido por edificio o rol
-    list_filter = ('rol', 'cooperativa') 
+    # 3. LIST_FILTER: Para filtrar a la derecha por usuarios que deben cambiar pass
+    list_filter = ('rol', 'cooperativa', 'requiere_cambio_pass') 
 
-# Registramos el Usuario con la configuración nueva
+# Registramos todo
 admin.site.register(Usuario, UsuarioAdmin)
-
-# ¡IMPORTANTE! Registramos la Cooperativa para que aparezca en el panel
 admin.site.register(Cooperativa)

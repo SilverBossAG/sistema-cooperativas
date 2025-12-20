@@ -6,9 +6,9 @@
     <style>body { font-family: sans-serif; background-color: #f9f9f9; padding: 20px; }</style>
 </head>
 <body>
-    <h1 style="color: #27ae60;">🏡 Mi Portal</h1>
-    <p>Bienvenido vecino <strong>{{ request.user.username }}</strong>.</p>
-    
+    <h1 style="color: #27ae60;">🏡 {{ cooperativa.nombre }}</h1>
+    <p>Bienvenido vecino, <strong>{{ usuario.username }}</strong>.</p>
+
     <div style="display: flex; gap: 10px;">
         <div style="border: 1px solid #ccc; padding: 15px; width: 200px;">
             <h3>Mis Votos</h3>

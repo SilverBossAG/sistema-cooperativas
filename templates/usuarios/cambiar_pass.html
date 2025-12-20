@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Activar Cuenta</title>
+    <style>body { font-family: sans-serif; padding: 40px; background-color: #ffeaa7; }</style>
+</head>
+<body>
+    <div style="background: white; padding: 30px; max-width: 400px; margin: auto; border-radius: 10px; border: 2px solid #e17055;">
+        <h2 style="color: #d35400;">⚠️ Acción Requerida</h2>
+        <p>Por seguridad, debes cambiar tu contraseña provisional antes de continuar.</p>
+        
+        <form method="post">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            {{ form.as_p() }}
+            <button type="submit" style="background: #d35400; color: white; padding: 10px; border: none; cursor: pointer;">Guardar Nueva Contraseña</button>
+        </form>
+    </div>
+</body>
+</html>

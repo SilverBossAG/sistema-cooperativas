@@ -131,3 +131,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# CONFIGURACIÓN DE CORREO (MODO DESARROLLO)
+# Esto hace que los emails salgan por la terminal negra en lugar de enviarse
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST_USER = 'admin@tucomunidad.com' # Remitente falso

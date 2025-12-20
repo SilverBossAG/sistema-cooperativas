@@ -14,7 +14,7 @@ class Cooperativa(models.Model):
     def __str__(self):
         return self.nombre
 
-# 2. TU USUARIO (Con Roles + Cooperativa)
+# 2 TU USUARIO (Con Roles + Cooperativa)
 class Usuario(AbstractUser):
     # --- TUS ROLES ---
     SUPERADMIN = 'SA'
@@ -43,6 +43,9 @@ class Usuario(AbstractUser):
         blank=True,
         verbose_name="Cooperativa Asignada"
     )
+
+    # Campo para obligar a cambiar la contraseña
+    requiere_cambio_pass = models.BooleanField(default=True, verbose_name="Obligar cambio contraseña")
 
     class Meta:
         verbose_name = "Usuario"

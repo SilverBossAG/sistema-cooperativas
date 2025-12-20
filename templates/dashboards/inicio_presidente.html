@@ -3,20 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <title>Panel Presidente</title>
-    <style>body { font-family: sans-serif; background-color: #ecf0f1; padding: 20px; }</style>
+    <style>
+        body { font-family: sans-serif; background-color: #ecf0f1; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #2980b9; color: white; }
+        .btn-crear { background: #27ae60; color: white; padding: 10px; text-decoration: none; border-radius: 5px; }
+        .btn-borrar { background: #e74c3c; color: white; padding: 5px 10px; text-decoration: none; border-radius: 3px; font-size: 0.8em; }
+    </style>
 </head>
 <body>
-    <h1 style="color: #2980b9;">🏢 Gestión de mi Comunidad</h1>
-    <p>Hola Presidente <strong>{{ request.user.username }}</strong>.</p>
-    
-    <div style="background: white; padding: 20px; border-radius: 10px;">
-        <h3>Acciones Rápidas:</h3>
-        <button>📅 Convocar Reunión</button>
-        <button>📢 Publicar Anuncio</button>
-        <button>⚠️ Ver Incidencias</button>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="color: #2980b9; margin-bottom: 5px;">🏢 Gestión: {{ cooperativa.nombre }}</h1>
+            <p>Hola, <strong>{{ usuario.username }}</strong>. Estás al mando.</p>
+        </div>
+        <a href="{{ url('logout') }}" style="color: red;">Cerrar Sesión</a>
     </div>
 
-    <br>
-    <a href="{{ url('logout') }}">Cerrar Sesión</a>
+    <hr>
+
+    <h3>👥 Mis Vecinos</h3>
+    
+    {% if not vecinos %}
+        <p>Para ver y gestionar los vecinos, pulsa aquí:</p>
+        <a href="{{ url('listar_vecinos') }}" class="btn-crear">📂 Cargar Lista de Vecinos</a>
+    {% else %}
+        <div style="margin-bottom: 15px;">
+            <a href="{{ url('crear_vecino') }}" class="btn-crear">+ Registrar Nuevo Vecino</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vecino in vecinos %}
+                <tr>
+                    <td>{{ vecino.username }}</td>
+                    <td>{{ vecino.first_name }} {{ vecino.last_name }}</td>
+                    <td>{{ vecino.email }}</td>
+                    <td>
+                        <a href="{{ url('eliminar_vecino', args=[vecino.id]) }}" class="btn-borrar" onclick="return confirm('¿Seguro que quieres echar a este vecino?');">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
 </body>
 </html>
