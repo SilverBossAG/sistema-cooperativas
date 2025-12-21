@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Vecino</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .card { max-width: 400px; margin: 40px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; }
+        input { width: 100%; padding: 10px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        label { font-weight: bold; color: #34495e; }
+        
+        .btn-guardar { width: 100%; padding: 12px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-guardar:hover { background: #d35400; }
+        
+        .cancelar { display: block; text-align: center; margin-top: 15px; color: #7f8c8d; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>✏ Editar a {{ vecino.username }}</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            {{ form.as_p }}
+
+            <button type="submit" class="btn-guardar">Guardar Cambios</button>
+        </form>
+
+        <a href="{% url 'listar_vecinos' %}" class="cancelar">Cancelar</a>
+    </div>
+
+</body>
+</html>

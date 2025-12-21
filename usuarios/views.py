@@ -83,7 +83,8 @@ def listar_vecinos(request):
         'cooperativa': request.user.cooperativa,
         'usuario': request.user
     }
-    return render(request, 'dashboards/inicio_presidente.html', context=contexto)
+    return render(request, 'dashboards/gestion_vecinos.html', context=contexto)
+
 
 @login_required(login_url='login')
 def crear_vecino(request):
@@ -116,8 +117,34 @@ def crear_vecino(request):
 
     return render(request, 'usuarios/form_vecino.html', {'form': form})
 
+
+@login_required(login_url='login')
+def editar_vecino(request, id_vecino):
+    # 1. Seguridad: Solo presidentes
+    if request.user.rol != Usuario.PRESIDENTE:
+        return redirect('panel_inicio')
+
+    # 2. Buscar al vecino (Asegurándonos de que sea de SU cooperativa)
+    vecino = get_object_or_404(Usuario, id=id_vecino, cooperativa=request.user.cooperativa)
+
+    if request.method == 'POST':
+        # Cargar el formulario con los datos que envía el presidente (POST)
+        # 'instance=vecino' es la CLAVE: le dice a Django que no cree uno nuevo, sino que actualice este.
+        form = VecinoForm(request.POST, instance=vecino)
+        
+        if form.is_valid():
+            form.save()
+            # Opcional: Podrías poner un mensaje de éxito aquí
+            return redirect('listar_vecinos')
+    else:
+        # Si entra por primera vez, le mostramos el formulario RELLENO con los datos actuales
+        form = VecinoForm(instance=vecino)
+
+    return render(request, 'usuarios/form_editar_vecino.html', {'form': form, 'vecino': vecino})
+
+
 @login_required(login_url='login')
 def eliminar_vecino(request, id_vecino):
     vecino = get_object_or_404(Usuario, id=id_vecino, cooperativa=request.user.cooperativa)
     vecino.delete()
-    return redirect('panel_inicio')
+    return redirect('listar_vecinos')

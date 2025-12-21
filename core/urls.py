@@ -4,7 +4,7 @@ from django.urls import path
 from usuarios.views import (
     login_view, logout_view, panel_inicio, 
     cambiar_password_obligatorio, listar_vecinos, 
-    crear_vecino, eliminar_vecino
+    editar_vecino, crear_vecino, eliminar_vecino
 )
 
 urlpatterns = [
@@ -15,6 +15,7 @@ urlpatterns = [
     # --- NUEVAS RUTAS PARA GESTIONAR VECINOS ---
     path('mis-vecinos/', listar_vecinos, name='listar_vecinos'),
     path('crear-vecino/', crear_vecino, name='crear_vecino'),
+    path('editar-vecino/<int:id_vecino>/', editar_vecino, name='editar_vecino'),
     path('eliminar-vecino/<int:id_vecino>/', eliminar_vecino, name='eliminar_vecino'),
     path('activar-cuenta/', cambiar_password_obligatorio, name='cambiar_password_obligatorio'),
 ]

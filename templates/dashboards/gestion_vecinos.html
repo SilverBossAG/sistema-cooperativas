@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Vecinos</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f9f9f9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #2980b9; color: white; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 8px 15px; text-decoration: none; border-radius: 4px; color: white; }
+        .btn-volver { background-color: #95a5a6; }
+        .btn-crear { background-color: #27ae60; }
+        .btn-borrar { background-color: #c0392b; font-size: 0.8em; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <h1>👥 Vecinos de {{ cooperativa.nombre }}</h1>
+        <a href="{% url 'panel_inicio' %}" class="btn btn-volver">⬅ Volver al Panel</a>
+    </div>
+
+    <div style="margin: 20px 0;">
+        <a href="{% url 'crear_vecino' %}" class="btn btn-crear">➕ Registrar Nuevo Vecino</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Vivienda</th>
+                <th>Usuario</th>
+                <th>Nombre Completo</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vecino in vecinos %}
+            <tr>
+                <td><strong>{{ vecino.numero_vivienda|default:"-" }}</strong></td>
+                <td>{{ vecino.username }}</td>
+                <td>{{ vecino.first_name }} {{ vecino.last_name }}</td>
+                <td>{{ vecino.email }}</td>
+                <td>
+                    {% if vecino.requiere_cambio_pass %}
+                        <span style="color:orange; font-weight:bold;">⚠ Pendiente</span>
+                    {% else %}
+                        <span style="color:green; font-weight:bold;">✔ Activo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'editar_vecino' vecino.id %}" 
+                    style="background-color: #f39c12; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-size: 0.8em; margin-right: 5px;">
+                    Editar
+                    </a>
+                    
+                    <a href="{% url 'eliminar_vecino' vecino.id %}" 
+                       class="btn btn-borrar"
+                       onclick="return confirm('¿Seguro que quieres eliminar a este vecino?');">
+                       Dar de Baja
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; padding: 20px;">
+                    No hay vecinos registrados aún.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
