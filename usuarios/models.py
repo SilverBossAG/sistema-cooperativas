@@ -33,6 +33,13 @@ class Usuario(AbstractUser):
         default=VECINO,
         verbose_name="Rol en la comunidad"
     )
+   
+    numero_vivienda = models.CharField(
+        max_length=10, 
+        blank=True, 
+        null=True, 
+        verbose_name="Nº Vivienda/Piso"
+    )
 
     # --- LA NUEVA VINCULACIÓN ---
     cooperativa = models.ForeignKey(

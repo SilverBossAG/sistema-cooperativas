@@ -3,15 +3,15 @@ from django.contrib.auth.admin import UserAdmin
 from .models import Usuario, Cooperativa
 
 class UsuarioAdmin(UserAdmin):
-    # 1. FIELDSETS: Para que aparezca la cajita cuando entras a editar al usuario
+    # 1. FIELDSETS: Añadimos 'numero_vivienda' para poder editarlo dentro de la ficha
     fieldsets = UserAdmin.fieldsets + (
-        ('Información Comunidad', {'fields': ('rol', 'cooperativa', 'requiere_cambio_pass')}),
+        ('Información Comunidad', {'fields': ('rol', 'cooperativa', 'numero_vivienda', 'requiere_cambio_pass')}),
     )
     
-    # 2. LIST_DISPLAY:
-    list_display = ('username', 'email', 'rol', 'cooperativa', 'requiere_cambio_pass', 'is_staff')
+    # 2. LIST_DISPLAY: Añadimos 'numero_vivienda' para verlo en la tabla general
+    list_display = ('username', 'email', 'rol', 'cooperativa', 'numero_vivienda', 'requiere_cambio_pass', 'is_staff')
     
-    # 3. LIST_FILTER: Para filtrar a la derecha por usuarios que deben cambiar pass
+    # 3. LIST_FILTER: (Esto lo dejamos igual, filtrar por número de piso no suele ser útil en la barra lateral)
     list_filter = ('rol', 'cooperativa', 'requiere_cambio_pass') 
 
 # Registramos todo

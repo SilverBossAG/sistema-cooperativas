@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.urls import path
-from usuarios.views import login_view, logout_view, panel_inicio # Importamos nuestras vistas
-from django.shortcuts import render
-from usuarios.views import cambiar_password_obligatorio, login_view, logout_view, panel_inicio, listar_vecinos, crear_vecino, eliminar_vecino
-
+# Una sola importación limpia:
+from usuarios.views import (
+    login_view, logout_view, panel_inicio, 
+    cambiar_password_obligatorio, listar_vecinos, 
+    crear_vecino, eliminar_vecino
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),          # Panel de admin de Django

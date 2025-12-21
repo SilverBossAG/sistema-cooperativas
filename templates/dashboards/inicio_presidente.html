@@ -35,6 +35,7 @@
                 <tr>
                     <th>Usuario</th>
                     <th>Nombre</th>
+                    <th>Vivienda</th> 
                     <th>Email</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -45,6 +46,15 @@
                 <tr>
                     <td>{{ vecino.username }}</td>
                     <td>{{ vecino.first_name }} {{ vecino.last_name }}</td>
+                    
+                    <td>
+                        {% if vecino.numero_vivienda %}
+                            <strong>{{ vecino.numero_vivienda }}</strong>
+                        {% else %}
+                            <span style="color:#999">-</span>
+                        {% endif %}
+                    </td>
+
                     <td>{{ vecino.email }}</td>
                     <td>
                         {% if vecino.requiere_cambio_pass %}
