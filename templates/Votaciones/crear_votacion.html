@@ -5,7 +5,7 @@
     <title>Nueva Votación</title>
     <style>
         body { font-family: sans-serif; background-color: #2c3e50; padding: 40px; display: flex; justify-content: center; }
-        .card { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 500px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .card { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 600px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
         h2 { color: #2c3e50; margin-top: 0; text-align: center; }
         
         label { display: block; margin-top: 15px; font-weight: bold; color: #34495e; }
@@ -14,13 +14,17 @@
             border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; 
         }
         
+        /* Estilos para la zona de opciones */
+        .zona-opciones { background: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 20px; border: 1px solid #eee; }
+        .input-opcion { margin-bottom: 10px; }
+        
+        .btn-add { background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 0.9em; }
         .btn-crear { 
             width: 100%; margin-top: 25px; padding: 12px; 
             background: #27ae60; color: white; border: none; 
             border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; 
         }
         .btn-crear:hover { background: #219150; }
-        
         .cancelar { display: block; text-align: center; margin-top: 15px; color: #7f8c8d; text-decoration: none; }
     </style>
 </head>
@@ -28,18 +32,45 @@
 
     <div class="card">
         <h2>📢 Convocar Votación</h2>
-        <p style="text-align: center; color: #7f8c8d; font-size: 0.9em;">Define el tema sobre el que votarán los vecinos.</p>
+        <p style="text-align: center; color: #7f8c8d; font-size: 0.9em;">Define el tema y las posibles respuestas.</p>
 
         <form method="post">
             {% csrf_token %}
             
             {{ form.as_p }}
 
+            <div class="zona-opciones">
+                <label style="margin-top: 0;">Opciones de respuesta:</label>
+                <small style="color: #999; display:block; margin-bottom:10px;">Añade las opciones (ej: Sí, No, Tal vez...)</small>
+                
+                <div id="contenedor-inputs">
+                    <input type="text" name="opciones" class="input-opcion" placeholder="Opción 1" required>
+                    <input type="text" name="opciones" class="input-opcion" placeholder="Opción 2" required>
+                </div>
+
+                <button type="button" class="btn-add" onclick="agregarOpcion()">+ Añadir otra opción</button>
+            </div>
+
             <button type="submit" class="btn-crear">Publicar Votación</button>
         </form>
 
         <a href="{% url 'listar_votaciones' %}" class="cancelar">Cancelar</a>
     </div>
+
+    <script>
+        function agregarOpcion() {
+            // Creamos un nuevo input
+            var input = document.createElement("input");
+            input.type = "text";
+            input.name = "opciones"; // IMPORTANTE: Todos se llaman igual para que Django los recoja como lista
+            input.className = "input-opcion";
+            input.placeholder = "Nueva opción...";
+            input.required = true;
+            
+            // Lo añadimos al contenedor
+            document.getElementById("contenedor-inputs").appendChild(input);
+        }
+    </script>
 
 </body>
 </html>

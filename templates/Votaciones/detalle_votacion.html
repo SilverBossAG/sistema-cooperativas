@@ -40,23 +40,6 @@
 
         <hr style="margin: 30px 0;">
 
-        {% if user.es_presidente and votacion.activa and total_votos == 0 %}
-            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
-                <h3>🔧 Configuración (Solo Presidente)</h3>
-                <p>Añade las opciones antes de que la gente empiece a votar.</p>
-                <form method="post" style="display: flex; gap: 10px;">
-                    {% csrf_token %}
-                    <input type="text" name="texto" placeholder="Ej: Sí, No, Abstención..." required style="flex: 1; padding: 10px;">
-                    <button type="submit" name="btn_add_opcion" style="background: #e67e22; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px;">Añadir Opción</button>
-                </form>
-                
-                {% if not opciones %}
-                    <p style="color: red;">⚠ ¡Cuidado! Esta votación aún no tiene opciones.</p>
-                {% endif %}
-            </div>
-            <br>
-        {% endif %}
-
         {% if votacion.activa and not ya_voto %}
             <h2>🗳️ Emitir tu voto</h2>
             
@@ -72,7 +55,7 @@
                     <button type="submit" name="btn_votar" class="btn-votar">CONFIRMAR VOTO</button>
                 </form>
             {% else %}
-                <p style="color: #e74c3c;">El presidente aún no ha configurado las opciones.</p>
+                <p style="color: #e74c3c;">Error: Esta votación no tiene opciones.</p>
             {% endif %}
 
         {% else %}
@@ -88,7 +71,7 @@
                         <span>{{ dato.votos }} votos ({{ dato.porcentaje }}%)</span>
                     </div>
                     <div class="barra-fondo">
-                        <div class="barra-progreso" style="width: {{ dato.porcentaje }}%;"></div>
+                        <div class="barra-progreso" style="width: {{ dato.porcentaje|floatformat:1 }}%;"></div>
                     </div>
                 </div>
             {% empty %}

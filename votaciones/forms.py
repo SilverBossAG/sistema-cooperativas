@@ -1,5 +1,5 @@
 from django import forms
-from .models import Votacion, Opcion
+from .models import Votacion
 
 class VotacionForm(forms.ModelForm):
     class Meta:
@@ -10,8 +10,3 @@ class VotacionForm(forms.ModelForm):
             'fecha_fin': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
-class OpcionForm(forms.ModelForm):
-    class Meta:
-        model = Opcion
-        fields = ['texto']
-        labels = {'texto': 'Nueva Opción'}
