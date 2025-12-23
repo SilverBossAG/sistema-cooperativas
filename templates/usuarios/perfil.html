@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mi Perfil</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .card { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .campo { margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .etiqueta { font-weight: bold; color: #7f8c8d; display: block; font-size: 0.9em; }
+        .valor { font-size: 1.1em; color: #2c3e50; }
+        .btn-editar { display: block; width: 100%; text-align: center; background: #3498db; color: white; padding: 12px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        .btn-editar:hover { background: #2980b9; }
+        .btn-volver { display: block; text-align: center; margin-top: 15px; color: #95a5a6; text-decoration: none; }
+        .alert { background: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2 style="text-align: center;">👤 Mi Perfil de Vecino</h2>
+
+        {% if mensaje_exito %}
+            <div class="alert">{{ mensaje_exito }}</div>
+        {% endif %}
+
+        <div class="campo">
+            <span class="etiqueta">Nombre Completo:</span>
+            <span class="valor">{{ usuario.first_name }} {{ usuario.last_name }}</span>
+        </div>
+
+        <div class="campo">
+            <span class="etiqueta">Cooperativa:</span>
+            <span class="valor">{{ usuario.cooperativa.nombre }}</span>
+        </div>
+
+        <div class="campo">
+            <span class="etiqueta">Vivienda:</span>
+            <span class="valor">{{ usuario.numero_vivienda|default:"Sin asignar" }}</span>
+        </div>
+        
+        <hr>
+        <p style="font-size: 0.9em; color: orange;">🔒 Datos protegidos</p>
+
+        <div class="campo">
+            <span class="etiqueta">Usuario:</span>
+            <span class="valor">{{ usuario.username }}</span>
+        </div>
+
+        <div class="campo">
+            <span class="etiqueta">Email:</span>
+            <span class="valor">{{ usuario.email }}</span>
+        </div>
+
+        <a href="{% url 'solicitar_codigo_perfil' %}" class="btn-editar">
+            🔒 Editar Datos 
+        </a>
+
+        <a href="{% url 'panel_inicio' %}" class="btn-volver">Volver al Inicio</a>
+    </div>
+
+</body>
+</html>

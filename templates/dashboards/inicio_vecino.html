@@ -3,24 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <title>Mi Comunidad</title>
-    <style>body { font-family: sans-serif; background-color: #f9f9f9; padding: 20px; }</style>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        h1 { color: #27ae60; margin-bottom: 5px; }
+        
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+            border: 1px solid #eee;
+            color: #333;
+            text-decoration: none; /* Para que el link no salga azul */
+            display: block;        /* Para que el <a> funcione como caja */
+        }
+
+        .card:hover { transform: translateY(-5px); border-color: #27ae60; }
+        
+        .numero-aviso { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: #2c3e50; }
+        .alerta-roja { color: #e74c3c; } /* Color rojo si hay pendientes */
+
+        .btn-logout {
+            display: block; width: fit-content; margin: 40px auto;
+            padding: 10px 20px; background: #e74c3c; color: white;
+            text-decoration: none; border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1 style="color: #27ae60;">🏡 {{ cooperativa.nombre }}</h1>
-    <p>Bienvenido vecino, <strong>{{ usuario.username }}</strong>.</p>
 
-    <div style="display: flex; gap: 10px;">
-        <div style="border: 1px solid #ccc; padding: 15px; width: 200px;">
-            <h3>Mis Votos</h3>
-            <p>Tienes 0 votaciones pendientes.</p>
-        </div>
-        <div style="border: 1px solid #ccc; padding: 15px; width: 200px;">
-            <h3>Documentos</h3>
-            <p>Actas y Estatutos.</p>
-        </div>
+    <div class="header">
+        <h1>🏡 {{ cooperativa.nombre }}</h1>
+        <p>Hola vecino, <strong>{{ usuario.first_name }}</strong>. Piso: {{ usuario.numero_vivienda|default:"-" }}</p>
     </div>
 
-    <br>
-    <a href="{% url 'logout' %}">Cerrar Sesión</a>
+    <div class="grid-container">
+        
+        <a href="{% url 'listar_votaciones' %}" class="card">
+            <h3 style="margin-top:0;">🗳️ Votaciones</h3>
+            
+            {% if pendientes > 0 %}
+                <div class="numero-aviso alerta-roja">{{ pendientes }}</div>
+                <p style="color: #e74c3c; font-weight: bold;">¡Tienes votos pendientes!</p>
+            {% else %}
+                <div class="numero-aviso" style="color: #27ae60;">✔</div>
+                <p>Estás al día.</p>
+            {% endif %}
+        </a>
+
+        <a href="{% url 'ver_perfil' %}" class="card">
+            <h3 style="margin-top:0;">👤 Mi Perfil</h3>
+            <div class="numero-aviso">⚙</div>
+            <p>Mis datos y seguridad</p>
+        </a>
+
+        <div class="card" style="opacity: 0.6; cursor: default;">
+            <h3 style="margin-top:0;">📂 Documentos</h3>
+            <div class="numero-aviso">0</div>
+            <p>Actas y Estatutos (Pronto)</p>
+        </div>
+
+    </div>
+
+    <a href="{% url 'logout' %}" class="btn-logout">Cerrar Sesión</a>
+
 </body>
 </html>

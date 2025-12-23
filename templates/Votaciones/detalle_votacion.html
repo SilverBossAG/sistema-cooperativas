@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sala de Votación</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        /* Encabezado */
+        .estado-box { float: right; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }
+        .activa { background: #d4edda; color: #155724; }
+        .cerrada { background: #f8d7da; color: #721c24; }
+
+        /* Barras de progreso */
+        .barra-fondo { background: #eee; border-radius: 5px; height: 25px; width: 100%; margin-top: 5px; overflow: hidden; }
+        .barra-progreso { height: 100%; background: #3498db; text-align: right; padding-right: 5px; line-height: 25px; color: white; font-size: 0.8em; transition: width 0.5s; }
+
+        /* Opciones de voto */
+        .opcion-voto { display: block; padding: 15px; border: 2px solid #eee; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .opcion-voto:hover { border-color: #3498db; background: #fbfdff; }
+        input[type="radio"] { transform: scale(1.5); margin-right: 10px; }
+
+        .btn-votar { width: 100%; padding: 15px; background: #27ae60; color: white; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <a href="{% url 'listar_votaciones' %}" style="text-decoration: none; color: #7f8c8d;">⬅ Volver a la lista</a>
+        
+        <div style="margin-top: 20px;">
+            <span class="estado-box {% if votacion.activa %}activa{% else %}cerrada{% endif %}">
+                {% if votacion.activa %}🟢 Votación Activa{% else %}🔴 Finalizada{% endif %}
+            </span>
+            <h1 style="margin-top: 0;">{{ votacion.titulo }}</h1>
+            <p style="color: #666; font-size: 1.1em;">{{ votacion.descripcion }}</p>
+            <p style="font-size: 0.9em; color: #999;">Cierra el: {{ votacion.fecha_fin }}</p>
+        </div>
+
+        <hr style="margin: 30px 0;">
+
+        {% if user.es_presidente and votacion.activa and total_votos == 0 %}
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border: 1px solid #ffeeba;">
+                <h3>🔧 Configuración (Solo Presidente)</h3>
+                <p>Añade las opciones antes de que la gente empiece a votar.</p>
+                <form method="post" style="display: flex; gap: 10px;">
+                    {% csrf_token %}
+                    <input type="text" name="texto" placeholder="Ej: Sí, No, Abstención..." required style="flex: 1; padding: 10px;">
+                    <button type="submit" name="btn_add_opcion" style="background: #e67e22; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px;">Añadir Opción</button>
+                </form>
+                
+                {% if not opciones %}
+                    <p style="color: red;">⚠ ¡Cuidado! Esta votación aún no tiene opciones.</p>
+                {% endif %}
+            </div>
+            <br>
+        {% endif %}
+
+        {% if votacion.activa and not ya_voto %}
+            <h2>🗳️ Emitir tu voto</h2>
+            
+            {% if opciones %}
+                <form method="post">
+                    {% csrf_token %}
+                    {% for opcion in opciones %}
+                        <label class="opcion-voto">
+                            <input type="radio" name="opcion_seleccionada" value="{{ opcion.id }}" required>
+                            {{ opcion.texto }}
+                        </label>
+                    {% endfor %}
+                    <button type="submit" name="btn_votar" class="btn-votar">CONFIRMAR VOTO</button>
+                </form>
+            {% else %}
+                <p style="color: #e74c3c;">El presidente aún no ha configurado las opciones.</p>
+            {% endif %}
+
+        {% else %}
+            <h2>📊 Resultados en tiempo real</h2>
+            {% if ya_voto %}
+                <p style="color: green;">✔ Ya has participado en esta votación.</p>
+            {% endif %}
+
+            {% for dato in datos_grafica %}
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <strong>{{ dato.texto }}</strong>
+                        <span>{{ dato.votos }} votos ({{ dato.porcentaje }}%)</span>
+                    </div>
+                    <div class="barra-fondo">
+                        <div class="barra-progreso" style="width: {{ dato.porcentaje }}%;"></div>
+                    </div>
+                </div>
+            {% empty %}
+                <p>Aún no hay votos registrados.</p>
+            {% endfor %}
+            
+            <p style="text-align: center; margin-top: 30px; font-weight: bold;">Total votos: {{ total_votos }}</p>
+        {% endif %}
+
+    </div>
+
+</body>
+</html>
