@@ -20,3 +20,4 @@ class CooperativaAdmin(admin.ModelAdmin):
 
 # Registramos todo
 admin.site.register(Usuario, UsuarioAdmin, Cooperativa, CooperativaAdmin)
+#
