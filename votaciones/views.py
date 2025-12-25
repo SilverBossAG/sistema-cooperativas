@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.db.models import Sum
 from .models import Votacion, Opcion, Voto
 from .forms import VotacionForm
+from usuarios.models import Usuario
 
 
 @login_required(login_url='login')
@@ -61,34 +62,32 @@ def crear_votacion(request):
 def ver_votacion(request, id_votacion):
     votacion = get_object_or_404(Votacion, id=id_votacion, cooperativa=request.user.cooperativa)
     
-    # 1. Comprobamos si el usuario YA votó
+    # Comprobamos si el usuario YA votó
     ya_voto = Voto.objects.filter(usuario=request.user, votacion=votacion).exists()
     
-    # (EL BLOQUE 2 LO HEMOS BORRADO ENTERO)
-
-    # 3. Lógica para VOTAR (Solo Vecinos que no han votado)
+    # Lógica para VOTAR
     if request.method == 'POST' and 'btn_votar' in request.POST:
         opcion_id = request.POST.get('opcion_seleccionada')
         if not ya_voto and opcion_id:
             opcion = get_object_or_404(Opcion, id=opcion_id)
-            
-            Voto.objects.create(
-                usuario=request.user,
-                votacion=votacion,
-                opcion_elegida=opcion
-            )
-            
+            Voto.objects.create(usuario=request.user, votacion=votacion, opcion_elegida=opcion)
             opcion.votos_cantidad += 1
             opcion.save()
-            
             messages.success(request, "¡Tu voto ha sido registrado!")
             return redirect('ver_votacion', id_votacion=votacion.id)
 
-    # 4. Calcular porcentajes (Esto sigue igual)
+    # --- CÁLCULOS PARA LAS GRÁFICAS ---
     opciones = votacion.opciones.all()
     total_votos = votacion.votos_totales.count()
     
+    # Calculamos cuántos vecinos hay en total en la comunidad (para la participación)
+    total_vecinos = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO).count()
+    abstencion = total_vecinos - total_votos
+    
     datos_grafica = []
+    nombres_opciones = [] # Para Chart.js
+    votos_opciones = []   # Para Chart.js
+
     if opciones:
         for op in opciones:
             porcentaje = (op.votos_cantidad / total_votos * 100) if total_votos > 0 else 0
@@ -97,12 +96,19 @@ def ver_votacion(request, id_votacion):
                 'votos': op.votos_cantidad,
                 'porcentaje': round(porcentaje, 1)
             })
+            # Guardamos listas limpias para pasarlas a JavaScript
+            nombres_opciones.append(op.texto)
+            votos_opciones.append(op.votos_cantidad)
 
-    # Quitamos 'form_opcion' del contexto porque ya no existe
     return render(request, 'votaciones/detalle_votacion.html', {
         'votacion': votacion,
         'opciones': opciones,
         'datos_grafica': datos_grafica,
         'ya_voto': ya_voto,
-        'total_votos': total_votos
+        'total_votos': total_votos,
+        # DATOS NUEVOS PARA EL PRESIDENTE:
+        'total_vecinos': total_vecinos,
+        'abstencion': abstencion,
+        'nombres_js': nombres_opciones, # Listas para las gráficas
+        'votos_js': votos_opciones
     })

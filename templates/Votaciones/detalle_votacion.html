@@ -3,25 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Sala de Votación</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* Encabezado */
         .estado-box { float: right; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 0.9em; }
         .activa { background: #d4edda; color: #155724; }
         .cerrada { background: #f8d7da; color: #721c24; }
 
-        /* Barras de progreso */
-        .barra-fondo { background: #eee; border-radius: 5px; height: 25px; width: 100%; margin-top: 5px; overflow: hidden; }
-        .barra-progreso { height: 100%; background: #3498db; text-align: right; padding-right: 5px; line-height: 25px; color: white; font-size: 0.8em; transition: width 0.5s; }
-
-        /* Opciones de voto */
+        /* Estilos de votación */
         .opcion-voto { display: block; padding: 15px; border: 2px solid #eee; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .opcion-voto:hover { border-color: #3498db; background: #fbfdff; }
         input[type="radio"] { transform: scale(1.5); margin-right: 10px; }
-
         .btn-votar { width: 100%; padding: 15px; background: #27ae60; color: white; font-size: 1.2em; border: none; border-radius: 5px; cursor: pointer; margin-top: 20px; }
+
+        /* Estilos del Panel Presidente */
+        .panel-presidente { background-color: #f8f9fa; border: 2px solid #2c3e50; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
+        .grid-graficas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        @media (max-width: 600px) { .grid-graficas { grid-template-columns: 1fr; } }
+        
+        .barra-fondo { background: #eee; border-radius: 5px; height: 25px; width: 100%; margin-top: 5px; overflow: hidden; }
+        .barra-progreso { height: 100%; background: #3498db; text-align: right; padding-right: 5px; line-height: 25px; color: white; font-size: 0.8em; }
     </style>
 </head>
 <body>
@@ -35,14 +39,32 @@
             </span>
             <h1 style="margin-top: 0;">{{ votacion.titulo }}</h1>
             <p style="color: #666; font-size: 1.1em;">{{ votacion.descripcion }}</p>
-            <p style="font-size: 0.9em; color: #999;">Cierra el: {{ votacion.fecha_fin }}</p>
+            <p style="font-size: 0.9em; color: #999;">Cierre el: {{ votacion.fecha_fin }}</p>
         </div>
 
         <hr style="margin: 30px 0;">
 
+        {% if user.es_presidente %}
+            <div class="panel-presidente">
+                <h2 style="color: #2c3e50; margin-top: 0;">📊 Panel de Control (Vista Presidente)</h2>
+                <p>Estadísticas en tiempo real (visibles solo para ti).</p>
+
+                <div class="grid-graficas">
+                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <h4 style="text-align: center;">Resultados Actuales</h4>
+                        <canvas id="graficaResultados"></canvas>
+                    </div>
+
+                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <h4 style="text-align: center;">Participación ({{ total_votos }}/{{ total_vecinos }})</h4>
+                        <canvas id="graficaParticipacion"></canvas>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         {% if votacion.activa and not ya_voto %}
             <h2>🗳️ Emitir tu voto</h2>
-            
             {% if opciones %}
                 <form method="post">
                     {% csrf_token %}
@@ -55,13 +77,13 @@
                     <button type="submit" name="btn_votar" class="btn-votar">CONFIRMAR VOTO</button>
                 </form>
             {% else %}
-                <p style="color: #e74c3c;">Error: Esta votación no tiene opciones.</p>
+                <p style="color: red;">Error: No hay opciones disponibles.</p>
             {% endif %}
 
         {% else %}
-            <h2>📊 Resultados en tiempo real</h2>
+            <h2>📊 Resultados Públicos</h2>
             {% if ya_voto %}
-                <p style="color: green;">✔ Ya has participado en esta votación.</p>
+                <p style="color: green;">✔ Tu voto ya está registrado.</p>
             {% endif %}
 
             {% for dato in datos_grafica %}
@@ -75,13 +97,45 @@
                     </div>
                 </div>
             {% empty %}
-                <p>Aún no hay votos registrados.</p>
+                <p>Aún no hay votos.</p>
             {% endfor %}
-            
-            <p style="text-align: center; margin-top: 30px; font-weight: bold;">Total votos: {{ total_votos }}</p>
         {% endif %}
 
     </div>
+
+    {% if user.es_presidente %}
+    <script>
+        // 1. Gráfica de Barras (Resultados)
+        const ctx1 = document.getElementById('graficaResultados');
+        new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: {{ nombres_js|safe }}, // Los nombres de las opciones desde Django
+                datasets: [{
+                    label: 'Votos',
+                    data: {{ votos_js|safe }}, // Los números de votos desde Django
+                    backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6'],
+                    borderWidth: 1
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // 2. Gráfica de Donut (Participación)
+        const ctx2 = document.getElementById('graficaParticipacion');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Han Votado', 'Pendientes (Abstención)'],
+                datasets: [{
+                    data: [{{ total_votos }}, {{ abstencion }}],
+                    backgroundColor: ['#27ae60', '#ecf0f1'],
+                    hoverOffset: 4
+                }]
+            }
+        });
+    </script>
+    {% endif %}
 
 </body>
 </html>
