@@ -46,16 +46,21 @@
 
         {% if user.es_presidente %}
             <div class="panel-presidente">
-                <h2 style="color: #2c3e50; margin-top: 0;">📊 Panel de Control (Vista Presidente)</h2>
-                <p>Estadísticas en tiempo real (visibles solo para ti).</p>
+                <h2 style="color: #2c3e50; margin-top: 0;">📊 Panel de Control</h2>
+                
+                {% if permiso_ver_detalles %}
+                    <p style="font-size: 0.9em; color: #27ae60;">🔓 <strong>Modo Transparente:</strong> Haz clic en las gráficas para ver nombres.</p>
+                {% else %}
+                    <p style="font-size: 0.9em; color: #7f8c8d;">🔒 <strong>Voto Secreto:</strong> Solo puedes ver las cantidades totales, no los nombres.</p>
+                {% endif %}
 
                 <div class="grid-graficas">
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
-                        <h4 style="text-align: center;">Resultados Actuales</h4>
+                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
+                        <h4 style="text-align: center;">Resultados</h4>
                         <canvas id="graficaResultados"></canvas>
                     </div>
 
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
                         <h4 style="text-align: center;">Participación ({{ total_votos }}/{{ total_vecinos }})</h4>
                         <canvas id="graficaParticipacion"></canvas>
                     </div>

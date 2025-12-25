@@ -62,31 +62,29 @@ def crear_votacion(request):
 def ver_votacion(request, id_votacion):
     votacion = get_object_or_404(Votacion, id=id_votacion, cooperativa=request.user.cooperativa)
     
-    # Comprobamos si el usuario YA votó
-    ya_voto = Voto.objects.filter(usuario=request.user, votacion=votacion).exists()
-    
+    # ... (Lógica de votación POST se queda igual) ...
     # Lógica para VOTAR
     if request.method == 'POST' and 'btn_votar' in request.POST:
-        opcion_id = request.POST.get('opcion_seleccionada')
-        if not ya_voto and opcion_id:
-            opcion = get_object_or_404(Opcion, id=opcion_id)
-            Voto.objects.create(usuario=request.user, votacion=votacion, opcion_elegida=opcion)
-            opcion.votos_cantidad += 1
-            opcion.save()
-            messages.success(request, "¡Tu voto ha sido registrado!")
-            return redirect('ver_votacion', id_votacion=votacion.id)
+        # ... (Tu código actual de votar) ...
+        # (Copialo de tu código anterior o déjalo como está si no lo has borrado)
+        pass 
 
-    # --- CÁLCULOS PARA LAS GRÁFICAS ---
+    # --- CÁLCULOS ---
     opciones = votacion.opciones.all()
     total_votos = votacion.votos_totales.count()
     
-    # Calculamos cuántos vecinos hay en total en la comunidad (para la participación)
-    total_vecinos = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO).count()
-    abstencion = total_vecinos - total_votos
+    total_vecinos_query = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO)
+    total_vecinos_count = total_vecinos_query.count()
+    abstencion_count = total_vecinos_count - total_votos
     
     datos_grafica = []
-    nombres_opciones = [] # Para Chart.js
-    votos_opciones = []   # Para Chart.js
+    nombres_opciones = []
+    votos_opciones = []
+    
+    mapa_votos_nombres = {} 
+    
+    # VERIFICAMOS EL PERMISO DE LA COMUNIDAD
+    permiso_ver_detalles = request.user.es_presidente and votacion.cooperativa.presidente_ve_votos
 
     if opciones:
         for op in opciones:
@@ -96,19 +94,44 @@ def ver_votacion(request, id_votacion):
                 'votos': op.votos_cantidad,
                 'porcentaje': round(porcentaje, 1)
             })
-            # Guardamos listas limpias para pasarlas a JavaScript
             nombres_opciones.append(op.texto)
             votos_opciones.append(op.votos_cantidad)
+            
+            # SOLO llenamos la lista de nombres si hay permiso
+            if permiso_ver_detalles:
+                votantes = Voto.objects.filter(votacion=votacion, opcion_elegida=op).select_related('usuario')
+                # Obtenemos nombre real y piso
+                nombres_lista = [f"{v.usuario.first_name} {v.usuario.last_name} ({v.usuario.numero_vivienda or '?'})" for v in votantes]
+                mapa_votos_nombres[op.texto] = nombres_lista
+
+    # Listas de participación
+    lista_abstencion = []
+    lista_participacion = []
+    
+    # SOLO llenamos si hay permiso
+    if permiso_ver_detalles:
+        ids_votaron = Voto.objects.filter(votacion=votacion).values_list('usuario_id', flat=True)
+        
+        vecinos_sin_voto = total_vecinos_query.exclude(id__in=ids_votaron)
+        lista_abstencion = [f"{u.first_name} {u.last_name} ({u.numero_vivienda or '?'})" for u in vecinos_sin_voto]
+        
+        vecinos_con_voto = total_vecinos_query.filter(id__in=ids_votaron)
+        lista_participacion = [f"{u.first_name} {u.last_name} ({u.numero_vivienda or '?'})" for u in vecinos_con_voto]
 
     return render(request, 'votaciones/detalle_votacion.html', {
         'votacion': votacion,
         'opciones': opciones,
         'datos_grafica': datos_grafica,
-        'ya_voto': ya_voto,
+        'ya_voto': ya_voto, # Asegúrate de tener esta variable calculada arriba como antes
         'total_votos': total_votos,
-        # DATOS NUEVOS PARA EL PRESIDENTE:
-        'total_vecinos': total_vecinos,
-        'abstencion': abstencion,
-        'nombres_js': nombres_opciones, # Listas para las gráficas
-        'votos_js': votos_opciones
+        'total_vecinos': total_vecinos_count,
+        'abstencion': abstencion_count,
+        'nombres_js': nombres_opciones,
+        'votos_js': votos_opciones,
+        # JSONs (estarán vacíos si no hay permiso)
+        'mapa_votos_json': json.dumps(mapa_votos_nombres),
+        'lista_abstencion_json': json.dumps(lista_abstencion),
+        'lista_participacion_json': json.dumps(lista_participacion),
+        # Pasamos el permiso al template para ocultar textos
+        'permiso_ver_detalles': permiso_ver_detalles 
     })

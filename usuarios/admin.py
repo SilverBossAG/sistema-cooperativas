@@ -14,6 +14,10 @@ class UsuarioAdmin(UserAdmin):
     # 3. LIST_FILTER: (Esto lo dejamos igual, filtrar por número de piso no suele ser útil en la barra lateral)
     list_filter = ('rol', 'cooperativa', 'requiere_cambio_pass') 
 
+class CooperativaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'direccion', 'presidente_ve_votos', 'fecha_creacion')
+    list_filter = ('presidente_ve_votos',)
+
 # Registramos todo
-admin.site.register(Usuario, UsuarioAdmin)
+admin.site.register(Usuario, UsuarioAdmin, CooperativaAdmin)
 admin.site.register(Cooperativa)
