@@ -19,5 +19,4 @@ class CooperativaAdmin(admin.ModelAdmin):
     list_filter = ('presidente_ve_votos',)
 
 # Registramos todo
-admin.site.register(Usuario, UsuarioAdmin, CooperativaAdmin)
-admin.site.register(Cooperativa)
+admin.site.register(Usuario, UsuarioAdmin, Cooperativa, CooperativaAdmin)

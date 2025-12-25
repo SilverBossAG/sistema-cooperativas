@@ -5,7 +5,6 @@ from django.contrib.auth.models import AbstractUser
 class Cooperativa(models.Model):
     nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Cooperativa")
     direccion = models.CharField(max_length=200, blank=True, verbose_name="Dirección")
-    
     presidente_ve_votos = models.BooleanField(
         default=False, 
         verbose_name="¿El Presidente puede ver quién votó qué?"
