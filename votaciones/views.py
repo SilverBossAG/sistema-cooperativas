@@ -6,6 +6,7 @@ from django.db.models import Sum
 from .models import Votacion, Opcion, Voto
 from .forms import VotacionForm
 from usuarios.models import Usuario
+import json
 
 
 @login_required(login_url='login')
@@ -68,6 +69,8 @@ def ver_votacion(request, id_votacion):
         # ... (Tu código actual de votar) ...
         # (Copialo de tu código anterior o déjalo como está si no lo has borrado)
         pass 
+
+    ya_voto = Voto.objects.filter(usuario=request.user, votacion=votacion).exists()
 
     # --- CÁLCULOS ---
     opciones = votacion.opciones.all()

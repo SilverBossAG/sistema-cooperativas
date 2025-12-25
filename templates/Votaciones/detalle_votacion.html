@@ -26,6 +26,13 @@
         
         .barra-fondo { background: #eee; border-radius: 5px; height: 25px; width: 100%; margin-top: 5px; overflow: hidden; }
         .barra-progreso { height: 100%; background: #3498db; text-align: right; padding-right: 5px; line-height: 25px; color: white; font-size: 0.8em; }
+        
+        /* Modal de Detalles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; }
+        .modal-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .lista-nombres li { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+        .btn-cerrar { float: right; cursor: pointer; color: #e74c3c; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -33,114 +40,21 @@
     <div class="container">
         <a href="{% url 'listar_votaciones' %}" style="text-decoration: none; color: #7f8c8d;">⬅ Volver a la lista</a>
         
+        {% if messages %}
+            <div style="margin-top: 20px;">
+                {% for message in messages %}
+                    <div style="padding: 10px; border-radius: 5px; margin-bottom: 10px; 
+                        {% if message.tags == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;
+                        {% else %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div style="margin-top: 20px;">
             <span class="estado-box {% if votacion.activa %}activa{% else %}cerrada{% endif %}">
                 {% if votacion.activa %}🟢 Votación Activa{% else %}🔴 Finalizada{% endif %}
             </span>
             <h1 style="margin-top: 0;">{{ votacion.titulo }}</h1>
-            <p style="color: #666; font-size: 1.1em;">{{ votacion.descripcion }}</p>
-            <p style="font-size: 0.9em; color: #999;">Cierre el: {{ votacion.fecha_fin }}</p>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        {% if user.es_presidente %}
-            <div class="panel-presidente">
-                <h2 style="color: #2c3e50; margin-top: 0;">📊 Panel de Control</h2>
-                
-                {% if permiso_ver_detalles %}
-                    <p style="font-size: 0.9em; color: #27ae60;">🔓 <strong>Modo Transparente:</strong> Haz clic en las gráficas para ver nombres.</p>
-                {% else %}
-                    <p style="font-size: 0.9em; color: #7f8c8d;">🔒 <strong>Voto Secreto:</strong> Solo puedes ver las cantidades totales, no los nombres.</p>
-                {% endif %}
-
-                <div class="grid-graficas">
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
-                        <h4 style="text-align: center;">Resultados</h4>
-                        <canvas id="graficaResultados"></canvas>
-                    </div>
-
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
-                        <h4 style="text-align: center;">Participación ({{ total_votos }}/{{ total_vecinos }})</h4>
-                        <canvas id="graficaParticipacion"></canvas>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-
-        {% if votacion.activa and not ya_voto %}
-            <h2>🗳️ Emitir tu voto</h2>
-            {% if opciones %}
-                <form method="post">
-                    {% csrf_token %}
-                    {% for opcion in opciones %}
-                        <label class="opcion-voto">
-                            <input type="radio" name="opcion_seleccionada" value="{{ opcion.id }}" required>
-                            {{ opcion.texto }}
-                        </label>
-                    {% endfor %}
-                    <button type="submit" name="btn_votar" class="btn-votar">CONFIRMAR VOTO</button>
-                </form>
-            {% else %}
-                <p style="color: red;">Error: No hay opciones disponibles.</p>
-            {% endif %}
-
-        {% else %}
-            <h2>📊 Resultados Públicos</h2>
-            {% if ya_voto %}
-                <p style="color: green;">✔ Tu voto ya está registrado.</p>
-            {% endif %}
-
-            {% for dato in datos_grafica %}
-                <div style="margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <strong>{{ dato.texto }}</strong>
-                        <span>{{ dato.votos }} votos ({{ dato.porcentaje }}%)</span>
-                    </div>
-                    <div class="barra-fondo">
-                        <div class="barra-progreso" style="width: {{ dato.porcentaje|floatformat:1 }}%;"></div>
-                    </div>
-                </div>
-            {% empty %}
-                <p>Aún no hay votos.</p>
-            {% endfor %}
-        {% endif %}
-
-    </div>
-
-    {% if user.es_presidente %}
-    <script>
-        // 1. Gráfica de Barras (Resultados)
-        const ctx1 = document.getElementById('graficaResultados');
-        new Chart(ctx1, {
-            type: 'bar',
-            data: {
-                labels: {{ nombres_js|safe }}, // Los nombres de las opciones desde Django
-                datasets: [{
-                    label: 'Votos',
-                    data: {{ votos_js|safe }}, // Los números de votos desde Django
-                    backgroundColor: ['#3498db', '#e74c3c', '#2ecc71', '#f1c40f', '#9b59b6'],
-                    borderWidth: 1
-                }]
-            },
-            options: { scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
-
-        // 2. Gráfica de Donut (Participación)
-        const ctx2 = document.getElementById('graficaParticipacion');
-        new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: ['Han Votado', 'Pendientes (Abstención)'],
-                datasets: [{
-                    data: [{{ total_votos }}, {{ abstencion }}],
-                    backgroundColor: ['#27ae60', '#ecf0f1'],
-                    hoverOffset: 4
-                }]
-            }
-        });
-    </script>
-    {% endif %}
-
-</body>
-</html>
+            <p style="color: #666; font-size: 1.1em;">{{
