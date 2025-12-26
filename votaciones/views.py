@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-import json  # <--- 1. IMPORTANTE: FALTABA ESTO
+from django.utils import timezone  # <--- IMPORTANTE
+from django.db.models import Q
+import json
 
 from .models import Votacion, Opcion, Voto
 from .forms import VotacionForm
@@ -22,9 +24,15 @@ def crear_votacion(request):
         lista_opciones = request.POST.getlist('opciones')
 
         if form.is_valid():
+            # 1. VALIDACIÓN DE FECHA PASADA
+            fecha_cierre = form.cleaned_data['fecha_fin']
+            if fecha_cierre < timezone.now():
+                messages.error(request, "⚠️ Error: La fecha de cierre no puede estar en el pasado.")
+                return render(request, 'votaciones/crear_votacion.html', {'form': form})
+
             opciones_limpias = [op.strip() for op in lista_opciones if op.strip()]
             if len(opciones_limpias) < 2:
-                messages.error(request, "Debes añadir al menos 2 opciones.")
+                messages.error(request, "⚠️ Error: Debes añadir al menos 2 opciones.")
                 return render(request, 'votaciones/crear_votacion.html', {'form': form})
 
             nueva_votacion = form.save(commit=False)
@@ -35,7 +43,7 @@ def crear_votacion(request):
             for texto_opcion in opciones_limpias:
                 Opcion.objects.create(votacion=nueva_votacion, texto=texto_opcion)
 
-            messages.success(request, "Votación creada correctamente.")
+            messages.success(request, "✅ Votación creada correctamente.")
             return redirect('listar_votaciones')
     else:
         form = VotacionForm()
@@ -46,30 +54,38 @@ def ver_votacion(request, id_votacion):
     votacion = get_object_or_404(Votacion, id=id_votacion, cooperativa=request.user.cooperativa)
     ya_voto = Voto.objects.filter(usuario=request.user, votacion=votacion).exists()
     
-    # VOTAR
+    # 2. LÓGICA DE VOTO CON SEGURIDAD DE TIEMPO
     if request.method == 'POST' and 'btn_votar' in request.POST:
-        opcion_id = request.POST.get('opcion_seleccionada')
-        if not ya_voto and opcion_id:
-            opcion = get_object_or_404(Opcion, id=opcion_id)
-            Voto.objects.create(usuario=request.user, votacion=votacion, opcion_elegida=opcion)
-            opcion.votos_cantidad += 1
-            opcion.save()
-            messages.success(request, "¡Tu voto ha sido registrado!")
-            return redirect('ver_votacion', id_votacion=votacion.id)
+        # PRIMERO: Comprobar si sigue activa por tiempo
+        if not votacion.activa:
+            messages.error(request, "⛔ La votación ha finalizado. Ya no se admiten votos.")
+        elif ya_voto:
+            messages.warning(request, "Ya has votado en esta encuesta.")
+        else:
+            opcion_id = request.POST.get('opcion_seleccionada')
+            if opcion_id:
+                opcion = get_object_or_404(Opcion, id=opcion_id)
+                Voto.objects.create(usuario=request.user, votacion=votacion, opcion_elegida=opcion)
+                opcion.votos_cantidad += 1
+                opcion.save()
+                messages.success(request, "¡Tu voto ha sido registrado!")
+                return redirect('ver_votacion', id_votacion=votacion.id)
 
-    # DATOS
+    # CÁLCULOS
     opciones = votacion.opciones.all()
     total_votos = votacion.votos_totales.count()
     
-    total_vecinos = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO).count()
-    abstencion = total_vecinos - total_votos
+    total_censo = Usuario.objects.filter(
+        cooperativa=votacion.cooperativa
+    ).exclude(rol=Usuario.SUPERADMIN).count()
+    
+    abstencion = total_censo - total_votos
     
     datos_grafica = []
     nombres_opciones = []
     votos_opciones = []
     mapa_votos_nombres = {} 
     
-    # 2. SEGURIDAD (Esto estaba bien en tu archivo, lo mantenemos)
     permiso_ver_detalles = request.user.es_presidente and votacion.cooperativa.presidente_ve_votos
 
     if opciones:
@@ -85,8 +101,12 @@ def ver_votacion(request, id_votacion):
             
             if permiso_ver_detalles:
                 votantes = Voto.objects.filter(votacion=votacion, opcion_elegida=op).select_related('usuario')
-                # 3. Formateamos el nombre bonito
-                nombres = [f"{v.usuario.first_name} {v.usuario.last_name}" for v in votantes]
+                nombres = []
+                for v in votantes:
+                    nombre = f"{v.usuario.first_name} {v.usuario.last_name}"
+                    if v.usuario == request.user:
+                        nombre += " <strong>(MI VOTO)</strong>"
+                    nombres.append(nombre)
                 mapa_votos_nombres[op.texto] = nombres
 
     lista_abstencion = []
@@ -94,11 +114,17 @@ def ver_votacion(request, id_votacion):
     
     if permiso_ver_detalles:
         ids_votaron = Voto.objects.filter(votacion=votacion).values_list('usuario_id', flat=True)
-        vecinos_sin_voto = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO).exclude(id__in=ids_votaron)
-        lista_abstencion = [f"{u.first_name} {u.last_name}" for u in vecinos_sin_voto]
+        base_usuarios = Usuario.objects.filter(cooperativa=votacion.cooperativa).exclude(rol=Usuario.SUPERADMIN)
         
-        vecinos_con_voto = Usuario.objects.filter(cooperativa=votacion.cooperativa, rol=Usuario.VECINO).filter(id__in=ids_votaron)
-        lista_participacion = [f"{u.first_name} {u.last_name}" for u in vecinos_con_voto]
+        sin_voto = base_usuarios.exclude(id__in=ids_votaron)
+        lista_abstencion = [f"{u.first_name} {u.last_name}" for u in sin_voto]
+        
+        con_voto = base_usuarios.filter(id__in=ids_votaron)
+        for u in con_voto:
+            texto = f"{u.first_name} {u.last_name}"
+            if u == request.user:
+                texto += " <strong>(YO)</strong>"
+            lista_participacion.append(texto)
 
     return render(request, 'votaciones/detalle_votacion.html', {
         'votacion': votacion,
@@ -106,9 +132,8 @@ def ver_votacion(request, id_votacion):
         'datos_grafica': datos_grafica,
         'ya_voto': ya_voto,
         'total_votos': total_votos,
-        'total_vecinos': total_vecinos,
+        'total_vecinos': total_censo,
         'abstencion': abstencion,
-        # 4. LA SOLUCIÓN: Usar json.dumps
         'nombres_js': json.dumps(nombres_opciones),
         'votos_js': json.dumps(votos_opciones),
         'mapa_votos_json': json.dumps(mapa_votos_nombres),

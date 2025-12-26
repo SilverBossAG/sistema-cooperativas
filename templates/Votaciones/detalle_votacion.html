@@ -64,66 +64,137 @@
         <hr style="margin: 30px 0;">
 
         {% if user.es_presidente %}
-            <div class="panel-presidente">
-                <h2 style="color: #2c3e50; margin-top: 0;">📊 Panel de Control</h2>
-                
-                {% if permiso_ver_detalles %}
-                    <p style="font-size: 0.9em; color: #27ae60;">🔓 <strong>Modo Transparente:</strong> Haz clic en las gráficas para ver nombres.</p>
-                {% else %}
-                    <p style="font-size: 0.9em; color: #7f8c8d;">🔒 <strong>Voto Secreto:</strong> Solo puedes ver las cantidades totales, no los nombres.</p>
-                {% endif %}
+    <script>
+        // VARIABLES GLOBALES
+        let mapaVotos = {{ mapa_votos_json|safe }};
+        let listaAbstencion = {{ lista_abstencion_json|safe }};
+        let listaParticipacion = {{ lista_participacion_json|safe }};
+        const permisoVer = {{ permiso_ver_detalles|yesno:"true,false" }};
+        const idVotacion = {{ votacion.id }};
+        
+        // GRÁFICAS INICIALES
+        let labelsData = {{ nombres_js|safe }};
+        let votosData = {{ votos_js|safe }};
 
-                <div class="grid-graficas">
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
-                        <h4 style="text-align: center;">Resultados</h4>
-                        <canvas id="graficaResultados"></canvas>
-                    </div>
+        // ... (Aquí van las definiciones de Chart.js chartResultados y chartParticipacion IGUAL que antes) ...
+        // (Por brevedad asumo que mantienes el código de creación de new Chart() aquí)
+        // SI NECESITAS QUE TE PEGUE EL CÓDIGO DE LAS GRÁFICAS OTRA VEZ, DÍMELO.
+        
+        const chartResultados = new Chart(document.getElementById('graficaResultados'), {
+            type: 'bar',
+            data: { labels: labelsData, datasets: [{ label: 'Votos', data: votosData, backgroundColor: '#3498db', borderWidth: 1 }] },
+            options: {
+                onClick: (e, els) => {
+                    if(!permisoVer || !els.length) return;
+                    const op = chartResultados.data.labels[els[0].index];
+                    mostrarNombres('Votaron: ' + op, mapaVotos[op] || []);
+                },
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
 
-                    <div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); {% if permiso_ver_detalles %}cursor: pointer;{% endif %}">
-                        <h4 style="text-align: center;">Participación ({{ total_votos }}/{{ total_vecinos }})</h4>
-                        <canvas id="graficaParticipacion"></canvas>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+        const chartParticipacion = new Chart(document.getElementById('graficaParticipacion'), {
+            type: 'doughnut',
+            data: { labels: ['Han Votado', 'Pendientes'], datasets: [{ data: [{{ total_votos }}, {{ abstencion }}], backgroundColor: ['#27ae60', '#ecf0f1'] }] },
+            options: {
+                onClick: (e, els) => {
+                    if(!permisoVer || !els.length) return;
+                    if(els[0].index === 0) mostrarNombres('Han Votado', listaParticipacion);
+                    else mostrarNombres('Pendientes', listaAbstencion);
+                }
+            }
+        });
 
-        {% if votacion.activa and not ya_voto %}
-            <h2>🗳️ Emitir tu voto</h2>
-            {% if opciones %}
-                <form method="post">
-                    {% csrf_token %}
-                    {% for opcion in opciones %}
-                        <label class="opcion-voto">
-                            <input type="radio" name="opcion_seleccionada" value="{{ opcion.id }}" required>
-                            {{ opcion.texto }}
-                        </label>
-                    {% endfor %}
-                    <button type="submit" name="btn_votar" class="btn-votar">CONFIRMAR VOTO</button>
-                </form>
-            {% else %}
-                <p style="color: red;">Error: No hay opciones disponibles.</p>
-            {% endif %}
+        // ==========================================
+        //  WEBSOCKET PROFESIONAL (Event-Driven)
+        // ==========================================
+        
+        // Determinar protocolo (ws:// o wss:// si es https)
+        const protocolo = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const socketUrl = protocolo + window.location.host + '/ws/votacion/' + idVotacion + '/';
+        
+        const socket = new WebSocket(socketUrl);
 
-        {% else %}
-            <h2>📊 Resultados Públicos</h2>
-            {% if ya_voto %}
-                <p style="color: green; font-weight: bold;">✔ Tu voto ya está registrado.</p>
-            {% endif %}
+        socket.onopen = function(e) {
+            console.log("✅ Conexión WebSocket Establecida");
+        };
 
-            {% for dato in datos_grafica %}
-                <div style="margin-bottom: 15px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <strong>{{ dato.texto }}</strong>
-                        <span>{{ dato.votos }} votos ({{ dato.porcentaje }}%)</span>
-                    </div>
-                    <div class="barra-fondo">
-                        <div class="barra-progreso" style="width: {{ dato.porcentaje|floatformat:1 }}%;"></div>
-                    </div>
-                </div>
-            {% empty %}
-                <p>Aún no hay votos registrados.</p>
-            {% endfor %}
-        {% endif %}
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.tipo === 'actualizar') {
+                console.log("⚡ Cambio detectado. Solicitando datos...");
+                actualizarDatos();
+            }
+        };
+
+        socket.onclose = function(e) {
+            console.error("❌ WebSocket desconectado. Intentando reconectar en 5s...");
+            // Reconexión automática (Resiliencia profesional)
+            setTimeout(() => { location.reload(); }, 5000);
+        };
+
+        function actualizarDatos() {
+            fetch(`/api/votacion/${idVotacion}/`)
+                .then(response => response.json())
+                .then(data => {
+                    // 1. ESTADO
+                    const badge = document.getElementById('badgeEstado');
+                    if (data.activa) {
+                        badge.className = 'estado-box activa'; badge.innerText = '🟢 Votación Activa';
+                    } else {
+                        if (badge.classList.contains('activa')) location.reload();
+                        badge.className = 'estado-box cerrada'; badge.innerText = '🔴 Finalizada';
+                    }
+
+                    // 2. DATOS
+                    mapaVotos = data.mapa_votos;
+                    listaAbstencion = data.lista_abstencion;
+                    listaParticipacion = data.lista_participacion;
+
+                    // 3. GRÁFICAS
+                    chartResultados.data.labels = data.nombres_opciones;
+                    chartResultados.data.datasets[0].data = data.votos_opciones;
+                    chartResultados.update();
+
+                    chartParticipacion.data.datasets[0].data = [data.total_votos, data.abstencion];
+                    chartParticipacion.update();
+                })
+                .catch(err => console.error("Error fetching data:", err));
+        }
+
+        // Funciones Modal (Iguales)
+        function mostrarNombres(titulo, lista) {
+            document.getElementById('tituloModal').innerText = titulo + ' (' + lista.length + ')';
+            const ul = document.getElementById('listaNombres');
+            ul.innerHTML = '';
+            if (lista.length === 0) ul.innerHTML = '<li style="color:#999;">Nadie</li>';
+            else lista.forEach(n => ul.innerHTML += `<li>👤 ${n}</li>`);
+            document.getElementById('modalDetalles').style.display = 'flex';
+        }
+        function cerrarModal(e) { if(e.target.id === 'modalDetalles') e.target.style.display = 'none'; }
+    </script>
+    {% endif %}
+    
+    {% if not user.es_presidente %}
+    <script>
+        const protocoloVec = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        const socketVec = new WebSocket(protocoloVec + window.location.host + '/ws/votacion/{{ votacion.id }}/');
+        
+        socketVec.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.tipo === 'actualizar') {
+                // El vecino solo necesita saber si se cierra o cambian sus datos públicos
+                fetch(`/api/votacion/{{ votacion.id }}/`).then(r=>r.json()).then(d => {
+                   if (!d.activa && document.querySelector('.activa')) location.reload();
+                   // Aquí podrías actualizar la barra de progreso pública también
+                   document.getElementById('resultadosPublicos').innerHTML = ''; // Limpiar y repintar (simplificado)
+                   // ... lógica de repintado ...
+                   location.reload(); // Para vecinos lo más fácil es recargar si hay cambios significativos
+                });
+            }
+        };
+    </script>
+    {% endif %}
 
     </div>
 

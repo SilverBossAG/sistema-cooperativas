@@ -6,9 +6,13 @@ class OpcionInline(admin.TabularInline):
     extra = 2 # Por defecto muestra hueco para 2 opciones
 
 class VotacionAdmin(admin.ModelAdmin):
+    # En list_display SÍ funciona (porque solo es mostrar)
     list_display = ('titulo', 'cooperativa', 'fecha_fin', 'activa')
-    list_filter = ('cooperativa', 'activa')
-    inlines = [OpcionInline] # Permite añadir opciones dentro de la misma pantalla de votación
+    
+    # En list_filter NO funciona directamente (porque requiere cálculos), así que lo quitamos
+    list_filter = ('cooperativa',) 
+    
+    inlines = [OpcionInline]
 
 admin.site.register(Votacion, VotacionAdmin)
-admin.site.register(Voto) # Opcional: para ver quién ha votado (cuidado con la privacidad)
+admin.site.register(Voto)

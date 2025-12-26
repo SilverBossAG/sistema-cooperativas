@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
@@ -43,9 +44,10 @@ def panel_inicio(request):
     pendientes_count = 0
     if usuario.cooperativa:
         # A. Buscamos todas las votaciones ACTIVAS de su comunidad
+        # CORRECCIÓN AQUÍ: Usamos fecha_fin__gt en lugar de activa=True
         votaciones_activas = Votacion.objects.filter(
             cooperativa=usuario.cooperativa, 
-            activa=True
+            fecha_fin__gt=timezone.now()
         )
         
         # B. Buscamos en cuáles YA ha votado este usuario
@@ -62,7 +64,7 @@ def panel_inicio(request):
     contexto = {
         'usuario': usuario,
         'cooperativa': usuario.cooperativa,
-        'pendientes': pendientes_count, # <--- Enviamos el dato al HTML
+        'pendientes': pendientes_count, 
     }
 
     # Redirección según ROL
@@ -74,6 +76,7 @@ def panel_inicio(request):
 
     else: # VECINO
         return render(request, 'dashboards/inicio_vecino.html', context=contexto)
+
 @login_required(login_url='login')
 def cambiar_password_obligatorio(request):
     if not request.user.requiere_cambio_pass:
@@ -160,7 +163,6 @@ def editar_vecino(request, id_vecino):
         
         if form.is_valid():
             form.save()
-            # Opcional: Podrías poner un mensaje de éxito aquí
             return redirect('listar_vecinos')
     else:
         # Si entra por primera vez, le mostramos el formulario RELLENO con los datos actuales
