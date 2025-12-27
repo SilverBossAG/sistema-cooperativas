@@ -142,6 +142,36 @@
         </div>
     </div>
 
+    <script>
+        // Cálculo del tiempo restante para el cierre
+        // Django nos da la fecha en formato ISO. La convertimos a JS.
+        const fechaCierre = new Date("{{ votacion.fecha_fin|date:'c' }}").getTime();
+        
+        function verificarCierre() {
+            const ahora = new Date().getTime();
+            const distancia = fechaCierre - ahora;
+
+            // Si la distancia es menor o igual a 0, y la página dice que está activa... RECARGAMOS
+            if (distancia <= 0) {
+                // Buscamos si existe el elemento que indica que está activa
+                const badge = document.getElementById('badgeEstado');
+                if (badge && badge.classList.contains('activa')) {
+                    console.log("⏰ Tiempo agotado. Cerrando votación...");
+                    location.reload(); // <--- AQUÍ ESTÁ LA MAGIA
+                }
+            } else {
+                // Si aún falta tiempo, comprobamos de nuevo en 1 segundo
+                // Esto asegura precisión sin machacar el navegador
+                setTimeout(verificarCierre, 1000);
+            }
+        }
+        
+        // Iniciamos el chequeo si la votación está activa
+        {% if votacion.activa %}
+            verificarCierre();
+        {% endif %}
+    </script>
+
     {% if user.es_presidente %}
     <script>
         // DATOS INICIALES DESDE DJANGO
@@ -216,6 +246,7 @@
                     if (data.activa) {
                         badge.className = 'estado-box activa'; badge.innerText = '🟢 Votación Activa';
                     } else {
+                        // Si recibimos que está cerrada por WS (por cambio manual del admin), recargamos
                         if (badge.classList.contains('activa')) location.reload();
                         badge.className = 'estado-box cerrada'; badge.innerText = '🔴 Finalizada';
                     }
@@ -259,8 +290,7 @@
         socketVec.onmessage = (e) => {
             const data = JSON.parse(e.data);
             if (data.tipo === 'actualizar') {
-                // El vecino simplemente recarga si hay cambios importantes para ver los resultados actualizados
-                // Opcional: Podríamos usar AJAX para no recargar toda la página, pero reload() es más seguro.
+                // Si hay votos nuevos o cambios manuales, recargamos
                 console.log("⚡ Cambio detectado. Recargando para ver resultados...");
                 location.reload();
             }

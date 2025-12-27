@@ -2,78 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Votaciones</title>
+    <title>Votaciones Disponibles</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn { padding: 10px 15px; text-decoration: none; border-radius: 5px; color: white; font-weight: bold; }
-        .btn-volver { background-color: #95a5a6; }
-        .btn-nueva { background-color: #27ae60; }
+        body { font-family: sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
         
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #2c3e50; color: white; }
-        tr:hover { background-color: #f1f1f1; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn-crear { background: #27ae60; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn-crear:hover { background: #219150; }
+        
+        .card-votacion { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid #ccc; transition: 0.2s; }
+        .card-votacion:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        /* Bordes según estado */
+        .borde-activa { border-left-color: #27ae60; }
+        .borde-cerrada { border-left-color: #e74c3c; }
 
-        .estado-activa { color: #27ae60; font-weight: bold; background: #eafaf1; padding: 5px 10px; border-radius: 15px; }
-        .estado-cerrada { color: #e74c3c; font-weight: bold; background: #fdedec; padding: 5px 10px; border-radius: 15px; }
+        .titulo { margin: 0 0 5px 0; font-size: 1.3em; color: #2c3e50; }
+        .fecha { color: #95a5a6; font-size: 0.9em; margin-bottom: 10px; display: block; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8em; font-weight: bold; text-transform: uppercase; float: right; }
+        .bg-activa { background: #d4edda; color: #155724; }
+        .bg-cerrada { background: #f8d7da; color: #721c24; }
+
+        .btn-ver { display: inline-block; margin-top: 10px; color: #3498db; text-decoration: none; font-weight: bold; }
+        .btn-ver:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🗳️ Votaciones: {{ user.cooperativa.nombre }}</h1>
-        <div>
-            <a href="{% url 'panel_inicio' %}" class="btn btn-volver">⬅ Volver al Panel</a>
-            {% if user.es_presidente %}
-                <a href="{% url 'crear_votacion' %}" class="btn btn-nueva">➕ Nueva Votación</a>
-            {% endif %}
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding: 10px; margin-bottom: 20px; border-radius: 5px; 
+                    {% if message.tags == 'success' %}background:#d4edda;color:#155724;{% else %}background:#f8d7da;color:#721c24;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="header-flex">
+            <h1>📋 Votaciones de la Comunidad</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'panel_inicio' %}" style="text-decoration: none; color: #7f8c8d; padding: 10px;">🏠 Inicio</a>
+                {% if user.es_presidente %}
+                    <a href="{% url 'crear_votacion' %}" class="btn-crear">＋ Nueva Votación</a>
+                {% endif %}
+            </div>
         </div>
+
+        {% if votaciones %}
+            {% for v in votaciones %}
+                <div class="card-votacion {% if v.activa %}borde-activa monitor-cierre{% else %}borde-cerrada{% endif %}" 
+                     data-fecha-fin="{{ v.fecha_fin|date:'c' }}">
+                    
+                    <span class="badge {% if v.activa %}bg-activa{% else %}bg-cerrada{% endif %}">
+                        {% if v.activa %}Activa{% else %}Finalizada{% endif %}
+                    </span>
+
+                    <h3 class="titulo">{{ v.titulo }}</h3>
+                    <span class="fecha">Cierre: {{ v.fecha_fin }}</span>
+                    <p>{{ v.descripcion|truncatewords:20 }}</p>
+                    
+                    <a href="{% url 'ver_votacion' v.id %}" class="btn-ver">
+                        {% if v.activa %}🗳️ Entrar a Votar{% else %}📊 Ver Resultados{% endif %}
+                    </a>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; color: #7f8c8d; margin-top: 50px;">
+                <p>No hay votaciones registradas aún.</p>
+            </div>
+        {% endif %}
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Fecha Límite</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for votacion in votaciones %}
-            <tr>
-                <td>
-                    <strong>{{ votacion.titulo }}</strong><br>
-                    <small style="color: #7f8c8d;">{{ votacion.descripcion|truncatechars:50 }}</small>
-                </td>
-                <td>{{ votacion.fecha_fin }}</td>
-                <td>
-                    {% if votacion.activa %}
-                        <span class="estado-activa">🟢 Activa</span>
-                    {% else %}
-                        <span class="estado-cerrada">🔴 Cerrada</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'ver_votacion' votacion.id %}" 
-                        style="background: #3498db; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                        {% if votacion.activa %}
-                            🗳️ Entrar / Votar
-                        {% else %}
-                            📊 Ver Resultados
-                        {% endif %}
-                    </a>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4" style="text-align: center; padding: 30px; color: #7f8c8d;">
-                    No hay votaciones activas en este momento.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <script>
+        // 1. Seleccionamos SOLO las tarjetas que están activas actualmente
+        const votacionesActivas = document.querySelectorAll('.monitor-cierre');
+
+        function verificarCierresMultiples() {
+            const ahora = new Date().getTime();
+            let necesitaRecarga = false;
+
+            // 2. Revisamos cada votación activa
+            votacionesActivas.forEach(elemento => {
+                // Leemos su fecha de cierre del atributo data-fecha-fin
+                const fechaCierre = new Date(elemento.dataset.fechaFin).getTime();
+                
+                // Si la hora actual es mayor que la de cierre... ¡bingo!
+                if (ahora >= fechaCierre) {
+                    necesitaRecarga = true;
+                }
+            });
+
+            // 3. Si encontramos alguna caducada, recargamos la página
+            if (necesitaRecarga) {
+                console.log("⏰ Una votación ha finalizado. Actualizando lista...");
+                location.reload();
+            } else {
+                // Si no, volvemos a comprobar en 1 segundo
+                setTimeout(verificarCierresMultiples, 1000);
+            }
+        }
+
+        // Solo arrancamos el script si hay alguna votación activa vigilada
+        if (votacionesActivas.length > 0) {
+            verificarCierresMultiples();
+        }
+    </script>
 
 </body>
 </html>
