@@ -6,11 +6,18 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.crypto import get_random_string 
-from .forms import VecinoForm
-from .models import Usuario
-import random 
 from django.contrib import messages 
-from votaciones.models import Votacion, Voto
+
+# --- IMPORTACIONES CORREGIDAS ---
+import random 
+
+# 1. De la propia app (usuarios)
+from .forms import VecinoForm
+from .models import Usuario 
+
+# 2. De la otra app (votaciones) <--- AQUÍ ESTABA EL FALLO
+from votaciones.models import Votacion, Voto 
+# --------------------------------
 
 # --- LOGIN Y LOGOUT ---
 
@@ -40,24 +47,23 @@ def panel_inicio(request):
     if usuario.requiere_cambio_pass:
         return redirect('cambiar_password_obligatorio')
 
-    # 2. CÁLCULO DE VOTACIONES PENDIENTES (Solo para vecinos/presidentes)
+    # 2. CÁLCULO DE VOTACIONES PENDIENTES
     pendientes_count = 0
     if usuario.cooperativa:
-        # A. Buscamos todas las votaciones ACTIVAS de su comunidad
-        # CORRECCIÓN AQUÍ: Usamos fecha_fin__gt en lugar de activa=True
+        # CORRECCIÓN CRÍTICA: Usamos fecha_fin__gt (Mayor que ahora)
+        # porque 'activa' no es un campo de la base de datos y da error.
         votaciones_activas = Votacion.objects.filter(
             cooperativa=usuario.cooperativa, 
             fecha_fin__gt=timezone.now()
         )
         
-        # B. Buscamos en cuáles YA ha votado este usuario
+        # Buscamos en cuáles YA ha votado este usuario
         votos_usuario = Voto.objects.filter(
             usuario=usuario,
             votacion__in=votaciones_activas
         ).values_list('votacion_id', flat=True)
         
-        # C. Restamos: (Total Activas) - (Votadas) = Pendientes
-        # Filtramos las activas excluyendo las que ya están en 'votos_usuario'
+        # Restamos: (Total Activas) - (Votadas) = Pendientes
         pendientes_count = votaciones_activas.exclude(id__in=votos_usuario).count()
 
     # Preparamos los datos
@@ -157,15 +163,11 @@ def editar_vecino(request, id_vecino):
     vecino = get_object_or_404(Usuario, id=id_vecino, cooperativa=request.user.cooperativa)
 
     if request.method == 'POST':
-        # Cargar el formulario con los datos que envía el presidente (POST)
-        # 'instance=vecino' es la CLAVE: le dice a Django que no cree uno nuevo, sino que actualice este.
         form = VecinoForm(request.POST, instance=vecino)
-        
         if form.is_valid():
             form.save()
             return redirect('listar_vecinos')
     else:
-        # Si entra por primera vez, le mostramos el formulario RELLENO con los datos actuales
         form = VecinoForm(instance=vecino)
 
     return render(request, 'usuarios/form_editar_vecino.html', {'form': form, 'vecino': vecino})
@@ -182,37 +184,26 @@ def eliminar_vecino(request, id_vecino):
 
 @login_required(login_url='login')
 def ver_perfil(request):
-    # Solo mostramos los datos, no dejamos editar aquí
     return render(request, 'usuarios/perfil.html', {'usuario': request.user})
 
 @login_required(login_url='login')
 def solicitar_codigo_perfil(request):
     usuario = request.user
     
-    # 1. Generamos un código de 6 dígitos
+    # 1. Generamos código
     codigo = str(random.randint(100000, 999999))
-    
-    # 2. Guardamos el código en la "memoria" de la sesión del usuario
     request.session['codigo_seguridad'] = codigo
     
-    # 3. Enviamos el email
+    # 2. Enviamos email
     asunto = 'Código de Seguridad - Editar Perfil'
-    mensaje = f"""
-    Hola {usuario.username},
+    mensaje = f"Hola {usuario.username},\n\nTu código es: {codigo}"
     
-    Has solicitado editar tu perfil. Tu código de seguridad es:
-    
-    {codigo}
-    
-    Si no has sido tú, ignora este mensaje y cambia tu contraseña por seguridad.
-    """
     try:
         send_mail(asunto, mensaje, settings.EMAIL_HOST_USER, [usuario.email])
-        print(f"--- CÓDIGO GENERADO: {codigo} ---") # Para que lo veas en la terminal si falla el email
+        print(f"--- CÓDIGO GENERADO: {codigo} ---") 
     except Exception as e:
         print(f"Error enviando mail: {e}")
 
-    # 4. Le mandamos al formulario seguro
     return redirect('confirmar_cambios_perfil')
 
 @login_required(login_url='login')
@@ -220,48 +211,41 @@ def confirmar_cambios_perfil(request):
     usuario = request.user
 
     if request.method == 'POST':
-        # Recogemos los datos del formulario
         codigo_ingresado = request.POST.get('codigo')
         nuevo_username = request.POST.get('username')
         nuevo_email = request.POST.get('email')
         nueva_pass = request.POST.get('password')
         
-        # 1. VERIFICAMOS EL CÓDIGO
         codigo_real = request.session.get('codigo_seguridad')
         
         if not codigo_real or codigo_ingresado != codigo_real:
             return render(request, 'usuarios/editar_perfil_seguro.html', {
-                'error': 'El código de seguridad es incorrecto o ha caducado.',
+                'error': 'El código de seguridad es incorrecto.',
                 'usuario': usuario
             })
             
-        # 2. SI EL CÓDIGO ES CORRECTO, APLICAMOS CAMBIOS
+        # Aplicamos cambios
         cambios_realizados = []
-        
         if nuevo_username and nuevo_username != usuario.username:
             usuario.username = nuevo_username
             cambios_realizados.append("Usuario")
-            
         if nuevo_email and nuevo_email != usuario.email:
             usuario.email = nuevo_email
             cambios_realizados.append("Email")
-            
         if nueva_pass:
-            usuario.set_password(nueva_pass) # Encriptamos la nueva pass
+            usuario.set_password(nueva_pass)
             cambios_realizados.append("Contraseña")
 
         usuario.save()
         
-        # Si cambió la contraseña, hay que mantener la sesión activa
         if nueva_pass:
             update_session_auth_hash(request, usuario)
 
-        # Borramos el código de la sesión por seguridad
         del request.session['codigo_seguridad']
         
         return render(request, 'usuarios/perfil.html', {
             'usuario': usuario,
-            'mensaje_exito': f"¡Datos actualizados correctamente! ({', '.join(cambios_realizados)})"
+            'mensaje_exito': f"¡Datos actualizados! ({', '.join(cambios_realizados)})"
         })
 
     return render(request, 'usuarios/editar_perfil_seguro.html', {'usuario': usuario})

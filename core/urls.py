@@ -8,6 +8,7 @@ from usuarios.views import (
     ver_perfil, solicitar_codigo_perfil, confirmar_cambios_perfil
 )
 from votaciones.views import listar_votaciones, crear_votacion, ver_votacion
+from votaciones import views as views_votaciones
 
 
 urlpatterns = [
@@ -15,8 +16,11 @@ urlpatterns = [
     path('', login_view, name='login'),       # La raíz de la web será el login
     path('logout/', logout_view, name='logout'),
     path('inicio/', panel_inicio, name='panel_inicio'), # Donde iremos al entrar
+    # --- ¡ESTA ES LA LÍNEA QUE HACE QUE EL WEBSOCKET FUNCIONE! ---
+    path('api/votacion/<int:id_votacion>/', views_votaciones.datos_en_vivo, name='datos_en_vivo'),
+
     # --- NUEVAS RUTAS PARA GESTIONAR VECINOS ---
-    path('mis-vecinos/', listar_vecinos, name='listar_vecinos'),
+    path('mis-vecinos/', listar_vecinos, name='listar_vecinos'),   
     path('crear-vecino/', crear_vecino, name='crear_vecino'),
     path('editar-vecino/<int:id_vecino>/', editar_vecino, name='editar_vecino'),
     path('eliminar-vecino/<int:id_vecino>/', eliminar_vecino, name='eliminar_vecino'),
